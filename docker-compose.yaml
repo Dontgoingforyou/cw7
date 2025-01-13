@@ -3,6 +3,7 @@ version: "3.9"
 services:
   app:
     build: .
+    image: cw7-app
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     ports:
       - "8000:8000"
@@ -19,9 +20,9 @@ services:
     image: postgres:14
     restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${PASSWORD}
+      POSTGRES_DB: ${NAME}
     ports:
       - "5434:5432"
 
@@ -33,6 +34,7 @@ services:
 
   celery:
     build: .
+    image: cw7-app
     command: celery -A config worker --loglevel=info
     volumes:
       - .:/app
@@ -41,3 +43,17 @@ services:
     depends_on:
       - redis
       - db
+
+  celery-beat:
+    build: .
+    image: cw7-app
+    command: celery -A config beat --loglevel=info
+    volumes:
+      - .:/code
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - db
+    networks:
+      - default
